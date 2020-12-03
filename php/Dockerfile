@@ -1,31 +1,18 @@
-FROM php:7.4.0-cli-alpine
-LABEL maintainer="Lixs" version="1.0" license="MIT" app.name="Lixs"
+FROM php:7.2.4-cli-alpine3.7
 
-# 设置时区
-ENV TZ=Asia/Shanghai
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+RUN ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo Asia/Shanghai > /etc/timezone
 
-RUN echo -e 'https://mirrors.aliyun.com/alpine/v3.6/main/\nhttps://mirrors.aliyun.com/alpine/v3.6/community/' > /etc/apk/repositories \
-    && apk update \
-    && apk add make \
-    && apk add autoconf \
-    && apk add gcc \
-    && apk add gcc g++
+RUN echo http://mirrors.ustc.edu.cn/alpine/v3.7/main > /etc/apk/repositories && echo http://mirrors.ustc.edu.cn/alpine/v3.7/community >> /etc/apk/repositories
+RUN apk update && apk upgrade
+RUN apk add m4 autoconf make gcc g++ linux-headers
 
-# RUN cd / && mkdir tmp
-
-# 安装 swoole
 ADD ./php-exts/swoole-4.5.5.tgz /tmp/
 RUN cd /tmp/swoole-4.5.5 && phpize && ./configure && make && make install
 RUN docker-php-ext-enable swoole
 
-# 安装 redis
 ADD ./php-exts/redis-4.2.0.tgz /tmp/
-RUN tar -zxf /tmp/redis-4.2.0.tgz && cd /tmp/redis-4.2.0 && phpize && ./configure && make && make install
+RUN cd /tmp/redis-4.2.0 && phpize && ./configure && make && make install
 RUN docker-php-ext-enable redis
-
-# 安装 pdo_mysql
-RUN docker-php-ext-install pdo_mysql
 
 # 安装composer
 COPY ./php-exts/composer.phar /usr/local/bin/composer
@@ -39,7 +26,7 @@ RUN set -ex \
     && php --ri redis \
     && rm -rf /var/cache/apk/* /tmp/* /usr/share/man \
     && echo -e "\033[42;37m Build Completed :).\033[0m\n"
-
+    
 WORKDIR /opt/www
 
 EXPOSE 9601
