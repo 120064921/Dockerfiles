@@ -44,55 +44,40 @@ docker pull drone/drone-runner-docker:1
 ## [运行镜像]
 docker run -d -v /var/run/docker.sock:/var/run/docker.sock -e DRONE_RPC_PROTO=http -e DRONE_RPC_HOST=192.168.10.46:8981 -e DRONE_RPC_SECRET=2eab2105565f2719a3ae6e9d1d0961a7 -e DRONE_RUNNER_CAPACITY=2 -e DRONE_RUNNER_NAME=192.168.10.46 -p 3000:3000 --restart always --name runner drone/agent:1
 
-# [构建 php(swoole reids) docker image]
-## [编辑 Dockerfile]
+# [运行 php(swoole reids : laravels-demo) docker image]
+## [运行镜像]
+## [拉取镜像]
 ```
-# 基础镜像
-FROM php:7.4.0-cli-alpine
-
-# 设置时区
-ENV TZ=Asia/Shanghai
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-
-RUN php -v
-
-# 安装swoole
-COPY ./php-exts/swoole-4.5.5.tgz /tmp/
-RUN cd /tmp/swoole-4.5.5 && phpize && ./configure && make && make install
-RUN docker-php-ext-enable swoole
-
-# 安装redis
-COPY ./php-exts/redis-4.2.0.tgz /tmp/
-RUN cd /tmp/redis-4.2.0 && phpize && ./configure && make && make install
-
-RUN docker-php-ext-enable redis
-# 开启pdo
-RUN docker-php-ext-install pdo_mysql
-
-# 安装composer
-COPY ./php-exts/composer.phar /tmp/
-RUN set -ex \
-    && chmod u+x /tmp/composer.phar \
-    && mv /tmp/composer.phar /usr/local/bin/composer \
-    # show php version and extensions
-    && php -v \
-    && php -m \
-    && php --ri swoole \
-    && php --ri redis 
-
-WORKDIR /opt/www
-
-EXPOSE 9601
+docker pull registry.cn-hangzhou.aliyuncs.com/packages1/php:7.2.4-cli-alpine3.7-swoole4.5.5-redis4.2.0
 ```
-## [构建镜像]
 ```
-docker build --no-cache -t registry.cn-hangzhou.aliyuncs.com/packages1/php:7.4-cli-alpine3.7-swoole4.5-redis4.0 .
-```
-## [测试镜像]
-```
-docker run -d --name phpswoole -it -p 9601:9601 registry.cn-hangzhou.aliyuncs.com/packages1/php:7.4-cli-alpine3.7-swoole4.5-redis4.0
-
-docker run -d --name phpswoole -it -p 9601:9601 -v /d/www/test/laravels-demo:/opt/www registry.cn-hangzhou.aliyuncs.com/packages1/php:7.4-cli-alpine3.7-swoole4.5-redis4.0
+--- windows ---
+docker run -d -p 9601:9601 -v /d/www/test/laravels:/opt/www -it --name laravels-demo registry.cn-hangzhou.aliyuncs.com/packages1/php:7.2.4-cli-alpine3.7-swoole4.5.5-redis4.2.0
+--- linux ---
+docker run -d -p 9601:9601 -v /mnt/www/test/laravels:/opt/www -it --name laravels-demo registry.cn-hangzhou.aliyuncs.com/packages1/php:7.2.4-cli-alpine3.7-swoole4.5.5-redis4.2.0
+docker exec -it laravels-demo sh
+cd /opt/www
+composer create-project --prefer-dist laravel/laravel laravels
+cd laravels
+vi composer.json
+add
+---
+"config": {
+	"platform": {
+		"ext-pcntl": "7.2",
+		"ext-posix": "7.2"
+	}
+}
+---
+composer require "hhxsv5/laravel-s:~3.7.0" -vvv
+php artisan laravels publish
+vi .env
+add
+---
+LARAVELS_LISTEN_IP=0.0.0.0
+LARAVELS_LISTEN_PORT=9601
+---
+php bin/laravels start -d
 ```
 
 # [运行 k8s]
