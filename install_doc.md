@@ -80,4 +80,28 @@ LARAVELS_LISTEN_PORT=9601
 php bin/laravels start -d
 ```
 
+# 配置supervisor
+```
+mkdir /etc/supervisord.d
+mkdir /var/log/supervisor/
+vi /etc/supervisord.d/laravels.ini
+add 
+---
+[program:laravels]
+directory=/opt/www/blog
+command=/usr/local/bin/php bin/laravels start -i
+numprocs=1
+autostart=true
+autorestart=true
+startretries=3
+user=www-data
+redirect_stderr=true
+stdout_logfile=/var/log/supervisor/%(program_name)s.log
+---
+
+supervisord
+
+ps -ef
+```
+
 # [运行 k8s]

@@ -8,7 +8,7 @@ RUN echo http://mirrors.ustc.edu.cn/alpine/v3.7/main > /etc/apk/repositories && 
 
 # 安装系统依赖库
 RUN apk update && apk upgrade
-RUN apk add m4 autoconf make gcc g++ linux-headers
+RUN apk add m4 autoconf make gcc g++ linux-headers supervisor
 
 # 安装php扩展
 ADD ./php-exts/swoole-4.5.5.tgz /tmp/
