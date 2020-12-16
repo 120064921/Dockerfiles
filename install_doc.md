@@ -121,5 +121,5 @@ docker pull shardingsphere/sharding-proxy
 ```
 ## 运行镜像 可以自定义端口3308和13308。3308表示docker容器端口, 13308表示宿主机端口。
 ```
-docker run --name sharding-proxy-test -d -v /d/www/test/sharding-proxy/conf:/opt/sharding-proxy/conf --env PORT=3308 -p13308:3308 shardingsphere/sharding-proxy:latest
+docker run --name sharding-proxy-test -d -v /d/www/test/github/Dockerfiles/sharding-proxy/conf:/opt/sharding-proxy/conf --env PORT=3308 -p13308:3308 shardingsphere/sharding-proxy:latest
 ```
