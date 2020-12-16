@@ -25,7 +25,7 @@ docker run -d -p 8443:443 -p 8180:80 --name gitlab --restart unless-stopped -v /
 ```
 ## [windows]
 ```
-docker run --detach --hostname 192.168.10.46 --publish 8929:443 --publish 8980:80 --publish 8922:22 --restart always --volume /srv/gitlab/config:/etc/gitlab --volume /srv/gitlab/logs:/var/log/gitlab --volume /srv/gitlab/data:/var/opt/gitlab --name gitlab gitlab/gitlab-ce:latest
+docker run --detach --hostname 192.168.10.43 --publish 8929:443 --publish 8980:80 --publish 8922:22 --restart always --volume /srv/gitlab/config:/etc/gitlab --volume /srv/gitlab/logs:/var/log/gitlab --volume /srv/gitlab/data:/var/opt/gitlab --name gitlab gitlab/gitlab-ce:latest
 ```
 
 
@@ -36,13 +36,13 @@ docker run --detach --hostname 192.168.10.46 --publish 8929:443 --publish 8980:8
 docker pull drone/drone:latest
 ## [运行镜像]
 ```
-docker run -v /d/docker/drone/data:/data -e DRONE_AGENTS_ENABLED=true -e DRONE_GITLAB_SERVER=http://192.168.10.46:8980 -e DRONE_GITLAB_CLIENT_ID=af36422e5da0ce72b5fda038c01382b04b7a46fee27137d68e72a5f32109bf72 -e DRONE_GITLAB_CLIENT_SECRET=df497a5c4793c779f541fbcaea9d1efd87bb153cc3fed8b002c30a41e485d451 -e DRONE_RPC_SECRET=2eab2105565f2719a3ae6e9d1d0961a7 -e DRONE_SERVER_HOST=192.168.10.46:8981 -e DRONE_SERVER_PROTO=http -e DRONE_TLS_AUTOCERT=false -e DRONE_LOGS_DEBUG=true -e DRONE_USER_CREATE=username:lixs,admin:true --publish=8981:80 --publish=8930:443 --restart=always --detach=true --name=drone drone/drone:latest
+docker run -v /d/docker/drone/data:/data -e DRONE_AGENTS_ENABLED=true -e DRONE_GITLAB_SERVER=http://192.168.10.43:8980 -e DRONE_GITLAB_CLIENT_ID=af36422e5da0ce72b5fda038c01382b04b7a46fee27137d68e72a5f32109bf72 -e DRONE_GITLAB_CLIENT_SECRET=df497a5c4793c779f541fbcaea9d1efd87bb153cc3fed8b002c30a41e485d451 -e DRONE_RPC_SECRET=2eab2105565f2719a3ae6e9d1d0961a7 -e DRONE_SERVER_HOST=192.168.10.43:8981 -e DRONE_SERVER_PROTO=http -e DRONE_TLS_AUTOCERT=false -e DRONE_LOGS_DEBUG=true -e DRONE_USER_CREATE=username:lixs,admin:true --publish=8981:80 --publish=8930:443 --restart=always --detach=true --name=drone drone/drone:latest
 ```
 ## [运行 drone-runner-docker]
 ## [拉取镜像]
 docker pull drone/drone-runner-docker:1
 ## [运行镜像]
-docker run -d -v /var/run/docker.sock:/var/run/docker.sock -e DRONE_RPC_PROTO=http -e DRONE_RPC_HOST=192.168.10.46:8981 -e DRONE_RPC_SECRET=2eab2105565f2719a3ae6e9d1d0961a7 -e DRONE_RUNNER_CAPACITY=2 -e DRONE_RUNNER_NAME=192.168.10.46 -p 3000:3000 --restart always --name runner drone/agent:1
+docker run -d -v /var/run/docker.sock:/var/run/docker.sock -e DRONE_RPC_PROTO=http -e DRONE_RPC_HOST=192.168.10.43:8981 -e DRONE_RPC_SECRET=2eab2105565f2719a3ae6e9d1d0961a7 -e DRONE_RUNNER_CAPACITY=2 -e DRONE_RUNNER_NAME=192.168.10.43 -p 3000:3000 --restart always --name runner drone/agent:1
 
 # [运行 php(swoole reids : laravels-demo) docker image]
 ## [运行镜像]
@@ -88,20 +88,38 @@ vi /etc/supervisord.d/laravels.ini
 add 
 ---
 [program:laravels]
-directory=/opt/www/blog
-command=/usr/local/bin/php bin/laravels start -i
+command=/usr/local/bin/php /opt/www/blog/bin/laravels start -i
 numprocs=1
 autostart=true
 autorestart=true
 startretries=3
-user=www-data
+user=root
 redirect_stderr=true
-stdout_logfile=/var/log/supervisor/%(program_name)s.log
+stdout_logfile=/var/log/supervisor/laravels.log
 ---
 
 supervisord
 
 ps -ef
+
+## 保存本地的镜像并推送到仓库
+docker commit d5abe80ae261
+docker tag 664d810faffa registry.cn-hangzhou.aliyuncs.com/packages1/php:laravels-demo
+docker login registry.cn-hangzhou.aliyuncs.com/packages1/php
+docker push registry.cn-hangzhou.aliyuncs.com/packages1/php:laravels-demo
+
+## 运行刚刚制作的镜像
+docker run -d -p 9602:9601 -v /mnt/www/test/laravels:/opt/www -it --name laravels-server-2 registry.cn-hangzhou.aliyuncs.com/packages1/php:laravels-demo
 ```
 
 # [运行 k8s]
+
+# [运行 Sharding-Proxy]
+## 拉取官方Docker镜像
+```
+docker pull shardingsphere/sharding-proxy
+```
+## 运行镜像 可以自定义端口3308和13308。3308表示docker容器端口, 13308表示宿主机端口。
+```
+docker run --name sharding-proxy-test -d -v /d/www/test/sharding-proxy/conf:/opt/sharding-proxy/conf --env PORT=3308 -p13308:3308 shardingsphere/sharding-proxy:latest
+```
